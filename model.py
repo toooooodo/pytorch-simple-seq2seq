@@ -20,18 +20,16 @@ class Encoder(nn.Module):
         embedding = self.embedding(inputs)
         # embedding shape => [seq_len, batch, input_size]
         embedding = torch.transpose(embedding, 0, 1)
-        print(f"embedding shape: {embedding.shape}, hidden shape: {hidden.shape}")
         # input of shape (seq_len, batch, input_size)
         # h_0 of shape (num_layers * num_directions, batch, hidden_size)
         output, h_n = self.gru(embedding, hidden)
         # output of shape (seq_len, batch, num_directions * hidden_size)
         # h_n of shape (num_layers * num_directions, batch, hidden_size)
-        print(f"output shape: {output.shape}, h_n shape: {h_n.shape}")
         return output, h_n
 
-    def init_hidden(self):
+    def init_hidden(self, device):
         # h_0 of shape (num_layers * num_directions, batch, hidden_size):
-        return torch.zeros(self.num_layers, self.batch_size, self.hidden_size)
+        return torch.zeros(self.num_layers, self.batch_size, self.hidden_size, device=device)
 
 
 class Decoder(nn.Module):
@@ -63,10 +61,11 @@ class Decoder(nn.Module):
         :param dec_input: [seq_len, batch, input_size]
         :param dec_hidden: [num_layers * num_directions, batch, hidden_size] => [num_layers, batch, hidden_size]
         :param enc_outputs: encoder outputs,  [seq_len, batch, num_directions * hidden_size]
-        :return:
+        :return: output: 预测结果 [batch_size, vocab_size]
+                 hidden: 隐藏状态 [1, batch_size, hidden_size]
         """
         # c: [batch_size, hidden_size]
-        c = self.attention_forward(dec_hidden, enc_outputs)
+        c = self.attention_forward(dec_hidden[-1], enc_outputs)
         # input_embedding: [batch_size, seq_len(1), embed_size]
         input_embedding = torch.transpose(self.embedding(dec_input), 0, 1)
         # input_embedding: [batch_size, embed_size]
@@ -81,6 +80,12 @@ class Decoder(nn.Module):
         return output, hidden
 
     def attention_forward(self, dec_hidden, enc_outputs):
+        """
+        拿decoder的隐藏状态与encoder的输出比较，返回attention的结果
+        :param dec_hidden: decoder 的隐藏状态 [batch_size, hidden_size]
+        :param enc_outputs: encoder的所有输出 [seq_len, batch_size, hidden_size]
+        :return: c: 当前的背景变量 [batch_size, hidden_size]
+        """
         dec_hiddens, enc_outputs = torch.broadcast_tensors(dec_hidden, enc_outputs)
         # enc_dec_states shape: [seq_len, batch_size, hidden_size * 2]
         enc_dec_states = torch.cat((dec_hiddens, enc_outputs), dim=2)
@@ -95,9 +100,10 @@ class Decoder(nn.Module):
     def init_hidden(self, hidden):
         return hidden
 
-    def init_input(self):
-        # 解码器在最初时间步的输入是特殊字符BOS
-        i_input = torch.ones(self.batch_size, 1, dtype=torch.int64)
+    def init_input(self, device):
+        # 解码器在最初时间步的输入是特殊字符<bos>, token_to_index['<bos>']=1
+        i_input = torch.ones(self.batch_size, 1, dtype=torch.int64, device=device)
+        print(f"init_input shape: {i_input.shape}")
         return i_input
 
 
