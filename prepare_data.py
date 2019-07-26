@@ -50,6 +50,10 @@ class F2EDataSet(Dataset):
         return self.in_seq.shape[0]
 
     def __getitem__(self, item):
+        """
+        :param item:
+        :return: [French Sentence, English Sentence]
+        """
         return [self.in_seq[item], self.out_seq[item]]
 
     def load_text(self):
@@ -102,6 +106,6 @@ if __name__ == '__main__':
     data_set = F2EDataSet()
     loader = DataLoader(data_set, batch_size=32, shuffle=True)
     for batch_idx, (in_seq, out_seq) in enumerate(loader):
-        print(in_seq.shape)
-        print(out_seq.shape)
+        print(in_seq[0].dtype)
+        print(out_seq[0])
         break
