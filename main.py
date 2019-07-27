@@ -10,13 +10,13 @@ device = torch.device('cuda')
 embed_size = 64
 hidden_size = 64
 num_layers = 2
-batch_size = 32
+batch_size = 64
 attention_size = 10
 drop_prob = 0.2
-num_epochs = 5
+num_epochs = 100
 lr = 1e-3
 random_sample_k = 5
-max_seq_len = 10
+max_seq_len = 15
 
 
 def translate(dataset, random_sample_sentences, sample_in_indices, encoder, decoder, device):
@@ -65,6 +65,8 @@ def main():
     sample_in_indices = torch.unsqueeze(sample_in_indices, dim=1)
     for epoch in range(num_epochs):
         total_loss = 0
+        encoder.train()
+        decoder.train()
         for batch_idx, (in_seq, out_seq) in enumerate(loader):
             this_batch_size = in_seq.shape[0]
             # in_seq, out_seq shape: [batch_size, max_len], dtype = int64
@@ -99,9 +101,12 @@ def main():
             loss.backward()
             enc_optimizer.step()
             dec_optimizer.step()
+        decoder.eval()
+        encoder.eval()
+        print(f"epoch {epoch+1}, loss = {total_loss/data_set.__len__()}")
         if epoch % 10 == 0:
             translate(data_set, random_sample_sentences, sample_in_indices, encoder, decoder, device)
-        print(f"epoch {epoch+1}, loss = {total_loss/data_set.__len__()}")
+    translate(data_set, random_sample_sentences, sample_in_indices, encoder, decoder, device)
 
 
 if __name__ == "__main__":
