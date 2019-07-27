@@ -6,9 +6,9 @@ from prepare_data import F2EDataSet
 
 
 class Encoder(nn.Module):
-    def __init__(self, vocab_size, embed_size, hidden_size, batch_size, num_layers=1, drop_prob=0):
+    def __init__(self, vocab_size, embed_size, hidden_size, num_layers=1, drop_prob=0):
         super(Encoder, self).__init__()
-        self.batch_size = batch_size
+        # self.batch_size = batch_size
         self.num_layers = num_layers
         self.hidden_size = hidden_size
         self.embedding = nn.Embedding(vocab_size, embed_size)
@@ -27,19 +27,19 @@ class Encoder(nn.Module):
         # h_n of shape (num_layers * num_directions, batch, hidden_size)
         return output, h_n
 
-    def init_hidden(self, device):
+    def init_hidden(self, batch_size, device):
         # h_0 of shape (num_layers * num_directions, batch, hidden_size):
-        return torch.zeros(self.num_layers, self.batch_size, self.hidden_size, device=device)
+        return torch.zeros(self.num_layers, batch_size, self.hidden_size, device=device)
 
 
 class Decoder(nn.Module):
-    def __init__(self, vocab_size, embed_size, hidden_size, batch_size, num_layers=1, attention_size=10, drop_prob=0):
+    def __init__(self, vocab_size, embed_size, hidden_size, num_layers=1, attention_size=10, drop_prob=0):
         super(Decoder, self).__init__()
 
         self.vocab_size = vocab_size
         self.embed_size = embed_size
         self.hidden_size = hidden_size
-        self.batch_size = batch_size
+        # self.batch_size = batch_size
         self.num_layers = num_layers
         self.attention_size = attention_size
         self.drop_prob = drop_prob
@@ -100,9 +100,9 @@ class Decoder(nn.Module):
     def init_hidden(self, hidden):
         return hidden
 
-    def init_input(self, device):
+    def init_input(self, batch_size, device):
         # 解码器在最初时间步的输入是特殊字符<bos>, token_to_index['<bos>']=1
-        i_input = torch.ones(self.batch_size, 1, dtype=torch.int64, device=device)
+        i_input = torch.ones(batch_size, 1, dtype=torch.int64, device=device)
         print(f"init_input shape: {i_input.shape}")
         return i_input
 
