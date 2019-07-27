@@ -44,7 +44,7 @@ class F2EDataSet(Dataset):
             "we are", "we re ",
             "they are", "they re "
         )
-        self.in_lang, self.out_lang, self.in_seq, self.out_seq = self.load_text()
+        self.in_lang, self.out_lang, self.in_seq, self.out_seq, self.pairs = self.load_text()
 
     def __len__(self):
         return self.in_seq.shape[0]
@@ -78,7 +78,7 @@ class F2EDataSet(Dataset):
             in_indices.append(self.convert_token_to_index(in_language, in_sentence))
             out_indices.append(self.convert_token_to_index(out_language, out_sentence))
         in_indices, out_indices = np.array(in_indices), np.array(out_indices)
-        return in_language, out_language, in_indices, out_indices
+        return in_language, out_language, in_indices, out_indices, pairs
 
     def unicodeToAscii(self, s):
         return ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
@@ -101,11 +101,29 @@ class F2EDataSet(Dataset):
         indices += [2] + [0] * (self.max_length - len(indices) - 1)
         return indices
 
+    def random_sample(self, k=5):
+        return random.choices(self.pairs, k=k)
+
+    def convert_index_to_token(self, lang, indices):
+        tokens = []
+        for index in indices:
+            tokens.append(lang.index_to_token[index])
+        return ' '.join(tokens)
+
 
 if __name__ == '__main__':
     data_set = F2EDataSet()
-    loader = DataLoader(data_set, batch_size=32, shuffle=True)
-    for batch_idx, (in_seq, out_seq) in enumerate(loader):
-        print(in_seq[0].dtype)
-        print(out_seq[0])
-        break
+    # print(data_set.random_sample())
+    random_sentences = data_set.random_sample()
+    sample_in_indices, sample_out_indices = [], []
+    for in_sentence, out_sentence in random_sentences:
+        sample_in_indices.append(data_set.convert_token_to_index(data_set.in_lang, in_sentence))
+        sample_out_indices.append(data_set.convert_token_to_index(data_set.out_lang, out_sentence))
+    print(random_sentences)
+    print(sample_in_indices)
+    print(sample_out_indices)
+# loader = DataLoader(data_set, batch_size=32, shuffle=True)
+# for batch_idx, (in_seq, out_seq) in enumerate(loader):
+#     print(in_seq[0].dtype)
+#     print(out_seq[0])
+#     break

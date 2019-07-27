@@ -68,8 +68,8 @@ class Decoder(nn.Module):
         c = self.attention_forward(dec_hidden[-1], enc_outputs)
         # input_embedding: [batch_size, seq_len(1), embed_size]
         input_embedding = torch.transpose(self.embedding(dec_input), 0, 1)
-        # input_embedding: [batch_size, embed_size]
-        input_embedding = torch.squeeze(input_embedding)
+        # input_embedding: [1, batch_size, embed_size] => [batch_size, embed_size]
+        input_embedding = torch.squeeze(input_embedding, dim=0)
         # input_and_c: [batch_size, embed_size + hidden_size]
         input_and_c = torch.cat((input_embedding, c), dim=1)
         # output: [1, batch_size, hidden_size]
@@ -103,15 +103,14 @@ class Decoder(nn.Module):
     def init_input(self, batch_size, device):
         # 解码器在最初时间步的输入是特殊字符<bos>, token_to_index['<bos>']=1
         i_input = torch.ones(batch_size, 1, dtype=torch.int64, device=device)
-        print(f"init_input shape: {i_input.shape}")
+        # print(f"init_input shape: {i_input.shape}")
         return i_input
 
 
 if __name__ == '__main__':
     data_set = F2EDataSet()
-    encoder = Encoder(data_set.in_lang.token_n, embed_size=50, hidden_size=64, batch_size=32)
-    decoder = Decoder(vocab_size=data_set.out_lang.token_n, embed_size=30, hidden_size=64,
-                      batch_size=32)
+    encoder = Encoder(data_set.in_lang.token_n, embed_size=50, hidden_size=64)
+    decoder = Decoder(vocab_size=data_set.out_lang.token_n, embed_size=30, hidden_size=64)
     loader = DataLoader(data_set, batch_size=32, shuffle=True)
     for batch_idx, (in_seq, out_seq) in enumerate(loader):
         print(in_seq.shape, out_seq.shape)
